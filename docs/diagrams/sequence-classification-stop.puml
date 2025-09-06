@@ -1,0 +1,26 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence: POST /stop_classification/{classification_id}
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "PostgreSQL" as pg
+
+gmini_admin -> web_api: POST /stop_classification/{classification_id}
+web_api -> pg: UPDATE classification_info SET status='STOPPED' WHERE id=:id
+web_api --> gmini_admin: 204 No Content
+
+@enduml

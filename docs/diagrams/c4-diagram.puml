@@ -1,0 +1,71 @@
+@startuml
+' Layout and spacing for readability (visual only)
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+  RoundCorner 10
+}
+skinparam package {
+  BackgroundColor #F6F8FA
+  BorderColor #CBD5E1
+}
+skinparam linetype ortho
+skinparam nodesep 140
+skinparam ranksep 160
+skinparam Padding 14
+skinparam NodePadding 24
+left to right direction
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+
+rectangle "iDecide" as system {
+  package "Services" {
+    rectangle "Web API\n(FastAPI)" as web_api
+    rectangle "BIM Upload\n(FastAPI)" as bim_upload
+    rectangle "BIM Classification\n(FastAPI)" as bim_classification
+    rectangle "LLM Services\n(FastAPI)" as llm_services
+  }
+  package "Data Stores" {
+    database "PostgreSQL" as postgres
+    database "ClickHouse" as clickhouse
+    rectangle "Yandex S3" as s3
+  }
+}
+
+rectangle "LLM (OpenAI)" as openai
+
+' Hidden edges to influence layout (not rendered)
+web_api -[hidden]-> bim_upload
+bim_upload -[hidden]-> bim_classification
+bim_classification -[hidden]-> llm_services
+postgres -[hidden]-> clickhouse
+clickhouse -[hidden]-> s3
+web_api -[hidden]-> postgres
+gmini_user -[hidden]-> web_api
+gmini_admin -[hidden]-> web_api
+openai -[hidden]-> s3
+
+' External clients to controller
+gmini_user  --> web_api : HTTP/REST
+gmini_admin  --> web_api : HTTP/REST
+
+' Service interactions
+web_api --> bim_upload : Triggers processing
+web_api --> bim_classification : Triggers classification
+web_api --> llm_services : Triggers training
+web_api --> postgres : SQL (metadata)
+
+' Internal processing and storage
+bim_upload --> s3 : S3 API
+bim_upload --> openai : Embeddings
+bim_upload --> clickhouse : Store embeddings/clusters
+bim_upload --> postgres : Update status
+
+bim_classification --> clickhouse : Read embeddings
+bim_classification --> postgres : Update status
+bim_classification --> s3 : Upload results CSV
+
+llm_services --> s3 : Training data
+
+@enduml

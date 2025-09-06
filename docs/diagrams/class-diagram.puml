@@ -1,0 +1,174 @@
+@startuml
+hide empty members
+hide methods
+skinparam linetype ortho
+skinparam nodesep 140
+skinparam ranksep 160
+skinparam Padding 14
+skinparam NodePadding 24
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #475569
+skinparam shadowing false
+left to right direction
+
+package "Pydantic Models" {
+  class "[M1] Model.PathBimModel" as Model_PathBimModel {
+    + nodes: str
+    + properties: str
+    + edges: str
+  }
+  class "[M2] Model.UploadBimSchemas" as Model_UploadBimSchemas {
+    + path: PathBimModel
+    + bucket: str
+    + name: str
+    + description: str
+  }
+  class "[M3] Model.StatusUploadResponseSchemas" as Model_StatusUploadResp {
+    + bim_id: str
+    + name: str
+    + uploaded_ts: datetime
+    + description: str
+    + percent: int
+    + status: StatusBimEnum
+  }
+
+  class "[M4] Model.Classificatory" as Model_Classificatory {
+    + id: int
+    + name: str
+    + parent_id: int?
+  }
+  class "[M5] Model.ClassificationParams" as Model_ClassificationParams {
+    + llm_id: str
+    + classificator: List<Classificatory>?
+  }
+  class "[M6] Model.ClassificationInsertInfo" as Model_ClassificationInsertInfo {
+    + id: str
+    + llm_id: str
+    + bim_id: str
+    + classificator: List<Classificatory>?
+  }
+  class "[M7] Model.CandidateMatchSchema" as Model_CandidateMatchSchema {
+    + bim_id: str
+    + classification_id: str
+    + elem_id: str
+    + cluster_id: str
+    + folder_id: int
+    + elem_description: str
+    + folder_path: str
+    + distance: float
+    + approved: bool?
+    + final: bool?
+    + llm_score: float?
+    + llm_reasoning: str?
+  }
+  class "[M8] Model.LLMlistResponse" as Model_LLMlistResponse {
+    + llm_id: str?
+    + llm_name: str
+    + llm_description: str
+  }
+  class "[M9] Model.BIMElement" as Model_BIMElement {
+    + pk: int?
+    + bim_id: str
+    + elem_id: str
+    + description: str
+    + cluster_id: str
+    + embedding: List<float>
+  }
+}
+
+package "SQLAlchemy Models (PostgreSQL)" {
+  class "[P1] PG.BimInfo" as PG_BimInfo {
+    + bim_id: varchar(1024)
+    + name: varchar(1024)
+    + uploaded_ts: timestamptz
+    + description: varchar(1024)
+    + percent: bigint
+    + status: varchar(30)
+  }
+  class "[P2] PG.BimPath" as PG_BimPath {
+    + id: bigint
+    + bim_id: varchar(1024)
+    + nodes: varchar(1024)
+    + properties: varchar(1024)
+    + edges: varchar(1024)
+  }
+  class "[P3] PG.ClassificationInfo" as PG_ClassificationInfo {
+    + id: varchar(1024)
+    + status: varchar(1024)
+    + result_path: varchar(1024)
+    + progress: bigint
+    + bim_id: varchar(1024)
+    + llm_id: varchar(1024)
+    + message: varchar(1024)
+  }
+  class "[P4] PG.ClassificationStatus" as PG_ClassificationStatus {
+    + id: bigint
+    + classification_id: varchar(1024)
+    + status: boolean
+  }
+  class "[P5] PG.Classificatory" as PG_Classificatory {
+    + id: bigint
+    + item_id: bigint
+    + name: varchar(500)
+    + parent_id: bigint?
+    + classification_id: varchar(1024)
+  }
+  class "[P6] PG.CandidateMatch" as PG_CandidateMatch {
+    + id: bigint
+    + classification_id: varchar(1024)
+    + bim_id: varchar(1024)
+    + elem_id: varchar(1024)
+    + folder_id: bigint
+    + cluster_id: varchar(64)
+    + elem_description: text
+    + folder_path: varchar(1024)
+    + distance: float
+    + approved: boolean?
+    + final: boolean?
+    + llm_score: float?
+    + llm_reasoning: text?
+  }
+  class "[P7] PG.LlmInfo" as PG_LlmInfo {
+    + llm_id: varchar(1024)
+    + llm_name: varchar(1024)
+    + llm_description: varchar(1024)
+  }
+}
+
+' Hidden edges to encourage a wide, readable layout
+Model_PathBimModel -[hidden]-> Model_UploadBimSchemas
+Model_UploadBimSchemas -[hidden]-> Model_StatusUploadResp
+Model_StatusUploadResp -[hidden]-> Model_Classificatory
+Model_Classificatory -[hidden]-> Model_ClassificationParams
+Model_ClassificationParams -[hidden]-> Model_ClassificationInsertInfo
+Model_ClassificationInsertInfo -[hidden]-> Model_CandidateMatchSchema
+Model_CandidateMatchSchema -[hidden]-> Model_LLMlistResponse
+Model_LLMlistResponse -[hidden]-> Model_BIMElement
+
+PG_BimInfo -[hidden]-> PG_BimPath
+PG_BimPath -[hidden]-> PG_ClassificationInfo
+PG_ClassificationInfo -[hidden]-> PG_ClassificationStatus
+PG_ClassificationStatus -[hidden]-> PG_Classificatory
+PG_Classificatory -[hidden]-> PG_CandidateMatch
+PG_CandidateMatch -[hidden]-> PG_LlmInfo
+
+' Associations Pydantic -> Pydantic
+Model_UploadBimSchemas *-- Model_PathBimModel
+Model_ClassificationParams o-- Model_Classificatory
+Model_ClassificationInsertInfo o-- Model_Classificatory
+
+' Logical mappings Pydantic -> PostgreSQL (labels added for clarity)
+Model_StatusUploadResp .. PG_BimInfo : maps to PG.BimInfo
+Model_UploadBimSchemas .. PG_BimPath : maps to PG.BimPath (paths)
+Model_ClassificationInsertInfo .. PG_ClassificationInfo : maps to PG.ClassificationInfo
+Model_CandidateMatchSchema .. PG_CandidateMatch : maps to PG.CandidateMatch
+Model_LLMlistResponse .. PG_LlmInfo : maps to PG.LlmInfo
+
+legend left
+Indexing:
+- [M#] Pydantic DTOs (models)
+- [P#] PostgreSQL models (SQLAlchemy)
+- [C#] ClickHouse logical tables
+endlegend
+
+@enduml

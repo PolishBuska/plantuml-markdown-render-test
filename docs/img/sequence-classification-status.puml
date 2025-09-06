@@ -1,0 +1,25 @@
+@startuml
+title Sequence Diagram: GET /classification_status/{classification_id} - Get Classification Status
+
+actor User as user
+participant "Web API" as web_api
+participant "PostgreSQL" as postgres
+
+user -> web_api: GET /classification_status/{classification_id}
+web_api -> web_api: Validate classification_id parameter
+
+alt classification_id is missing or invalid
+    web_api --> user: HTTP 400 - Bad Request
+else
+    web_api -> postgres: Query classification status by classification_id
+    postgres --> web_api: Return status information
+    
+    alt Classification process found
+        web_api -> web_api: Format response
+        web_api --> user: Return status (200 OK)
+    else
+        web_api --> user: HTTP 404 - Not Found
+    end
+end
+
+@enduml

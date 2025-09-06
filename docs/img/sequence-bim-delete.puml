@@ -1,0 +1,25 @@
+@startuml
+title Sequence Diagram: DELETE /bim_models/{bim_id} - Delete BIM Model
+
+actor User as user
+participant "Web API" as web_api
+participant "BIM Upload Service" as bim_upload
+participant "ClickHouse" as clickhouse
+participant "PostgreSQL" as postgres
+
+user -> web_api: DELETE /bim_models/{bim_id}
+web_api -> web_api: Validate bim_id parameter
+
+alt bim_id is missing or invalid
+    web_api --> user: HTTP 400 - Bad Request
+else
+    web_api -> bim_upload: DELETE /bim_models with bim_id
+    bim_upload -> clickhouse: Delete BIM data by bim_id
+    clickhouse --> bim_upload: Confirm deletion
+    bim_upload --> web_api: 200 OK
+    web_api -> postgres: Delete BIM metadata by bim_id
+    postgres --> web_api: Confirm deletion
+    web_api --> user: 204 No Content
+end
+
+@enduml

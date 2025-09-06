@@ -1,0 +1,81 @@
+@startuml
+hide circle
+skinparam linetype ortho
+skinparam nodesep 190
+skinparam ranksep 190
+skinparam Padding 18
+skinparam NodePadding 26
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #475569
+skinparam shadowing false
+left to right direction
+
+skinparam entity {
+  BackgroundColor #F8FAFC
+  BorderColor #CBD5E1
+}
+
+package "Embeddings" {
+entity "[C1] CH.BimUpload" as CH_BimUpload {
+    + pk: UInt64
+    + bim_id: String(256)
+    + elem_id: String(256)
+    + description: String(1024)
+    + cluster_id: String(64)
+    + embedding: Array(Float64)
+  }
+
+  entity "[C2] CH.TrainingElemEmbedding" as CH_TrElemEmb {
+    + pk: UInt64
+    + elem_desc: String(256)
+    + embedding: Array(Float64)
+  }
+
+  entity "[C3] CH.TrainingFolderEmbedding" as CH_TrFolderEmb {
+    + pk: UInt64
+    + folder_desc: String(256)
+    + embedding: Array(Float64)
+  }
+}
+
+package "Training Mappings" {
+  entity "[C4] CH.TrainingElemFolderMapping" as CH_TrMap {
+    + pk: UInt64
+    + training_set_id: String(256)
+    + elem_desc_id: UInt64
+    + folder_desc_id: UInt64
+    + label: UInt64
+    + comment: String(1024)
+  }
+
+  entity "[C5] CH.TrainingLlmElemFolderMapping" as CH_TrLLM {
+    + pk: UInt64
+    + llm_id: String(256)
+    + elem_folder_mapping_id: UInt64
+  }
+}
+
+' Hidden layout edges to declutter
+CH_TrElemEmb -[hidden]-> CH_TrFolderEmb
+CH_TrFolderEmb -[hidden]-> CH_BimUpload
+CH_BimUpload -[hidden]-> CH_TrMap
+CH_TrMap -[hidden]-> CH_TrLLM
+
+' Relationships via *_id columns
+CH_TrMap::elem_desc_id }o--|| CH_TrElemEmb::pk
+CH_TrMap::folder_desc_id }o--|| CH_TrFolderEmb::pk
+CH_TrLLM::elem_folder_mapping_id }o--|| CH_TrMap::pk
+
+legend left
+Relations join by fields:
+- elem_desc_id -> TrainingElemEmbedding.pk
+- folder_desc_id -> TrainingFolderEmbedding.pk
+- elem_folder_mapping_id -> TrainingElemFolderMapping.pk
+endlegend
+
+legend right
+Indexing:
+- [C#] ClickHouse entity index used across docs.
+endlegend
+
+@enduml

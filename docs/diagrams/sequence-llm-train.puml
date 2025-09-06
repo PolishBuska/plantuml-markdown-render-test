@@ -1,0 +1,33 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence: POST /llms (Train LLM)
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "LLM Services" as llm
+participant "Yandex S3" as s3
+participant "ClickHouse" as ch
+participant "PostgreSQL" as pg
+
+gmini_admin -> web_api: POST /llms {base_llm_id, training_data_path}
+web_api -> llm: POST /start_training {new_llm_id, base_llm_id, training_data_path}
+llm -> s3: download training data
+llm -> ch: insert Training* rows (embeddings, mappings)
+llm --> web_api: 200 OK
+web_api -> pg: INSERT llm_info(new_llm_id, ...)
+web_api --> gmini_admin: 200 {new_llm_id}
+
+@enduml

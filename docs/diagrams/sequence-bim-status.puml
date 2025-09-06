@@ -1,0 +1,30 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence Diagram: GET /bim_models/{bim_id}/status
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "PostgreSQL" as postgres
+
+'gmini and admin can both request status
+gmini_user -> web_api: GET /bim_models/{bim_id}/status
+gmini_admin -> web_api: GET /bim_models/{bim_id}/status
+web_api -> postgres: SELECT ... FROM bim_info WHERE bim_id=:id
+postgres --> web_api: name, uploaded_ts, description, percent, status
+web_api --> gmini_user: 200 StatusUploadResponse
+web_api --> gmini_admin: 200 StatusUploadResponse
+
+@enduml

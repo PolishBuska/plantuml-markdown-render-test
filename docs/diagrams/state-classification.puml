@@ -1,0 +1,9 @@
+@startuml
+[*] --> IN_PROGRESS : Start Classification
+IN_PROGRESS --> COMPLETED : Classification finished
+IN_PROGRESS --> STOPPED : Stop requested
+IN_PROGRESS --> ERROR : Failure
+COMPLETED --> [*]
+STOPPED --> [*]
+ERROR --> [*]
+@enduml

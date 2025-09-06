@@ -1,0 +1,22 @@
+@startuml
+title Sequence Diagram: POST /bim_models/{bim_id}/classification - Start Classification
+
+actor User as user
+participant "Web API" as web_api
+participant "PostgreSQL" as postgres
+participant "BIM Classification Service" as bim_classification
+
+user -> web_api: POST /bim_models/{bim_id}/classification with params
+web_api -> web_api: Validate bim_id and parameters
+web_api -> postgres: Create classification record with status "PENDING"
+postgres --> web_api: Return classification_id
+web_api -> bim_classification: POST /start_classifications with classification_id
+bim_classification --> web_api: 200 OK (async processing started)
+web_api --> user: Return classification_id (202 Accepted)
+
+bim_classification -> bim_classification: Start classification process
+bim_classification -> postgres: Update classification status to "PROCESSING"
+bim_classification -> bim_classification: Perform classification using AI models
+bim_classification -> postgres: Update classification status to "COMPLETED" with results
+
+@enduml

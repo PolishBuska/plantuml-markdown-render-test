@@ -1,0 +1,36 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence: GET /classification_status/{classification_id}
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "PostgreSQL" as pg
+participant "Yandex S3" as s3
+
+'gmini and admin can query status
+gmini_user -> web_api: GET /classification_status/{classification_id}
+gmini_admin -> web_api: GET /classification_status/{classification_id}
+web_api -> pg: SELECT status, result_path, progress FROM classification_info WHERE id=:id
+pg --> web_api: row {status, result_path}
+web_api --> gmini_user: 200 ClassificationStatusResponse {status, result_path}
+web_api --> gmini_admin: 200 ClassificationStatusResponse {status, result_path}
+
+group If status == COMPLETED
+  gmini_user -> s3: GET results.csv
+  gmini_admin -> s3: GET results.csv
+end
+
+@enduml

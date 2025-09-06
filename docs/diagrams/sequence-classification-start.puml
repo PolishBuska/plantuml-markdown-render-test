@@ -1,0 +1,39 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence: POST /bim_models/{bim_id}/classification
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "PostgreSQL" as pg
+participant "BIM Classification" as svc
+participant "ClickHouse" as ch
+participant "Yandex S3" as s3
+
+'gmini or admin can start
+gmini_user -> web_api: POST /bim_models/{bim_id}/classification {llm_id, classificator}
+gmini_admin -> web_api: POST /bim_models/{bim_id}/classification {llm_id, classificator}
+web_api -> pg: INSERT classification_info(status=IN_PROGRESS, progress=0, bim_id, llm_id)
+web_api -> pg: INSERT classificatory[*] (from classificator)
+pg --> web_api: classification_id
+web_api -> svc: POST /start_classifications {classification_id}
+svc -> ch: read embeddings for bim_id
+svc -> pg: update classification_info(progress/status)
+svc -> s3: upload result CSV
+svc -> pg: update result_path
+web_api --> gmini_user: 200 {classification_id}
+web_api --> gmini_admin: 200 {classification_id}
+
+@enduml

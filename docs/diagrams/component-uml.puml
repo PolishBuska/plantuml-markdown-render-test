@@ -1,0 +1,77 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 220
+skinparam ranksep 240
+skinparam Padding 16
+skinparam NodePadding 24
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+}
+skinparam ArrowColor #475569
+top to bottom direction
+
+package "Clients" {
+  actor "Gmini (User)" as gmini_user
+  actor "Gmini (Admin)" as gmini_admin
+}
+
+package "API Gateway" {
+  component "Controller Service (Web API)" as web_api
+}
+
+package "Services" {
+  component "Model Management Service" as bim_upload
+  component "Classifier Service" as bim_cls
+  component "LLM Services (FastAPI)" as llm
+}
+
+package "Data Stores" {
+  component "PostgreSQL" as pg
+  component "ClickHouse" as ch
+}
+
+package "External" {
+  component "Yandex S3" as s3
+  component "LLM (OpenAI)" as openai
+}
+
+' Hidden edges to shape layout
+gmini_user -[hidden]-> gmini_admin
+gmini_admin -[hidden]-> web_api
+web_api -[hidden]-> bim_upload
+bim_upload -[hidden]-> bim_cls
+bim_cls -[hidden]-> llm
+pg -[hidden]-> ch
+s3 -[hidden]-> openai
+
+' Force vertical stacking within packages
+bim_upload -[hidden]-> bim_cls
+bim_cls -[hidden]-> llm
+pg -[hidden]-> ch
+
+' Clients to API
+gmini_user --> web_api : HTTP/REST
+gmini_admin --> web_api : HTTP/REST
+
+' API to services and DB
+web_api --> bim_upload : HTTP/REST
+web_api --> bim_cls : HTTP/REST
+web_api --> llm : HTTP/REST
+web_api --> pg : SQL
+
+' Services to storage and externals
+bim_upload --> s3 : S3 API
+bim_upload --> openai : HTTP/REST
+bim_upload --> ch : SQL
+bim_upload --> pg : SQL
+
+bim_cls --> ch : SQL
+bim_cls --> pg : SQL
+bim_cls --> s3 : S3 API
+
+llm --> s3 : S3 API
+llm --> ch : SQL
+
+@enduml

@@ -1,0 +1,30 @@
+@startuml
+left to right direction
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+}
+skinparam ArrowColor #475569
+skinparam nodesep 80
+skinparam ranksep 90
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+
+rectangle "BIM Management" {
+  usecase "Upload BIM Model" as UC_Upload
+  usecase "Get BIM Status" as UC_GetStatus
+  usecase "List BIM Models" as UC_List
+  usecase "Delete BIM Model" as UC_Delete
+}
+
+' Regular user capabilities
+gmini_user -- UC_Upload
+gmini_user -- UC_GetStatus
+gmini_user -- UC_List
+
+' Admin-specific or elevated actions
+gmini_admin -- UC_Delete
+gmini_admin -- UC_List
+gmini_admin -- UC_GetStatus
+
+@enduml

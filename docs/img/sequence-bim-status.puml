@@ -1,0 +1,25 @@
+@startuml
+title Sequence Diagram: GET /bim_models/{bim_id}/status - Get BIM Upload Status
+
+actor User as user
+participant "Web API" as web_api
+participant "PostgreSQL" as postgres
+
+user -> web_api: GET /bim_models/{bim_id}/status
+web_api -> web_api: Validate bim_id parameter
+
+alt bim_id is missing or invalid
+    web_api --> user: HTTP 400 - Bad Request
+else
+    web_api -> postgres: Query BIM status by bim_id
+    postgres --> web_api: Return status information
+    
+    alt BIM model found
+        web_api -> web_api: Format response
+        web_api --> user: Return status (200 OK)
+    else
+        web_api --> user: HTTP 404 - Not Found
+    end
+end
+
+@enduml

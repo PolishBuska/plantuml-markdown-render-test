@@ -1,0 +1,7 @@
+@startuml
+[*] --> IN_PROGRESS : Upload started
+IN_PROGRESS --> COMPLETED : Processing finished
+IN_PROGRESS --> ERROR : Failure
+COMPLETED --> [*]
+ERROR --> [*]
+@enduml

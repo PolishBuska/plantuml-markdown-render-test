@@ -1,0 +1,41 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(admin, "Administrator", "Manages BIM models and classifications")
+Person(user, "User", "Interacts with the system via API")
+
+System_Boundary(system, "BIM Classification System") {
+    Container(web_api, "Web API", "FastAPI", "Orchestrates requests and manages API endpoints")
+    Container(bim_upload, "BIM Upload Service", "FastAPI", "Processes BIM files, generates embeddings, and clusters elements")
+    Container(bim_classification, "BIM Classification Service", "FastAPI", "Handles classification processes using AI models")
+    Container(llm_services, "LLM Services", "FastAPI", "Manages LLM training and inference")
+    
+    ContainerDb(postgres, "PostgreSQL", "Database", "Stores metadata, status information, and process tracking")
+    ContainerDb(clickhouse, "ClickHouse", "Database", "Stores BIM element embeddings and large-scale data")
+    
+    Container(s3, "S3 Storage", "Amazon S3", "Stores BIM files (JSON files: nodes, edges, properties)")
+}
+
+System_Ext(openai, "OpenAI API", "Provides embedding generation services")
+
+Rel(admin, web_api, "Uses", "HTTP/REST")
+Rel(user, web_api, "Uses", "HTTP/REST")
+
+Rel(web_api, bim_upload, "Triggers processing", "HTTP/REST")
+Rel(web_api, bim_classification, "Triggers classification", "HTTP/REST")
+Rel(web_api, llm_services, "Triggers training", "HTTP/REST")
+Rel(web_api, postgres, "Reads/writes metadata", "SQL")
+Rel(web_api, clickhouse, "Reads/writes embeddings", "SQL")
+
+Rel(bim_upload, s3, "Downloads BIM files", "AWS SDK")
+Rel(bim_upload, openai, "Requests embeddings", "HTTP/REST")
+Rel(bim_upload, clickhouse, "Stores embeddings and clusters", "SQL")
+Rel(bim_upload, postgres, "Updates status", "SQL")
+
+Rel(bim_classification, clickhouse, "Reads embeddings", "SQL")
+Rel(bim_classification, postgres, "Updates classification status", "SQL")
+
+Rel(llm_services, postgres, "Reads/writes LLM info", "SQL")
+Rel(llm_services, s3, "Accesses training data", "AWS SDK")
+
+@enduml

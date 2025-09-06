@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+}
+skinparam ArrowColor #475569
+skinparam nodesep 80
+skinparam ranksep 90
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+
+rectangle "LLM" {
+  usecase "List LLMs" as UC_ListLLM
+  usecase "Train LLM" as UC_TrainLLM
+}
+
+' Regular user can list
+gmini_user -- UC_ListLLM
+
+' Admin can list and train
+gmini_admin -- UC_ListLLM
+gmini_admin -- UC_TrainLLM
+
+@enduml

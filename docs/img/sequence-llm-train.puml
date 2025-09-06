@@ -1,0 +1,24 @@
+@startuml
+title Sequence Diagram: POST /llms - Train LLM
+
+actor User as user
+participant "Web API" as web_api
+participant "PostgreSQL" as postgres
+participant "LLM Services" as llm_services
+participant "S3 Storage" as s3
+
+user -> web_api: POST /llms with training data
+web_api -> web_api: Validate request data
+web_api -> postgres: Create LLM training record with status "PENDING"
+postgres --> web_api: Return training_id
+web_api -> llm_services: POST /start_training with training parameters
+llm_services --> web_api: 200 OK (async processing started)
+web_api --> user: Return training_id (202 Accepted)
+
+llm_services -> s3: Access training data from specified path
+s3 --> llm_services: Return training data
+llm_services -> llm_services: Train LLM model
+llm_services -> postgres: Update training status to "COMPLETED"
+llm_services -> llm_services: Store trained model
+
+@enduml

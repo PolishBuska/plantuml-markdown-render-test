@@ -1,0 +1,30 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence: GET /llms
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "PostgreSQL" as pg
+
+'gmini and admin can list LLMs
+gmini_user -> web_api: GET /llms?limit&offset
+gmini_admin -> web_api: GET /llms?limit&offset
+web_api -> pg: SELECT llm_id, llm_name, llm_description FROM llm_info
+pg --> web_api: rows
+web_api --> gmini_user: 200 List[LLMlistResponse]
+web_api --> gmini_admin: 200 List[LLMlistResponse]
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence Diagram: POST /bim_models - Upload BIM Model
+
+actor "Gmini (User)" as gmini_user
+participant "Web API" as web_api
+participant "PostgreSQL" as postgres
+participant "BIM Upload Service" as bim_upload
+participant "Yandex S3" as s3
+participant "LLM (OpenAI)" as openai
+participant "ClickHouse" as clickhouse
+
+gmini_user -> web_api: POST /bim_models {s3_paths, model_version}
+web_api -> web_api: Validate request\n(check S3 paths)
+web_api -> postgres: Check if any BIM upload in progress
+postgres --> web_api: Return status
+
+alt BIM upload already in progress
+web_api --> gmini_user: HTTP 400 - Upload already running
+else
+    web_api -> postgres: Generate BIM ID and store initial metadata (IN_PROGRESS)
+    postgres --> web_api: Confirm storage
+    web_api -> bim_upload: POST /bim_models with BIM ID
+    bim_upload --> web_api: 200 OK (async processing started)
+web_api --> gmini_user: Return BIM ID (200 OK)
+    
+    bim_upload -> s3: Download BIM files (nodes, edges, properties)
+    s3 --> bim_upload: Return files
+    bim_upload -> bim_upload: Parse JSON files\nCreate element descriptions
+    bim_upload -> openai: Request embeddings for element descriptions
+    openai --> bim_upload: Return embeddings
+    bim_upload -> clickhouse: Store embeddings with temporary cluster IDs
+    bim_upload -> postgres: Update upload progress (0-50%)
+    bim_upload -> bim_upload: Cluster elements using DBSCAN
+    bim_upload -> clickhouse: Update with final cluster IDs
+    bim_upload -> postgres: Update upload status to COMPLETED (100%)
+end
+
+@enduml

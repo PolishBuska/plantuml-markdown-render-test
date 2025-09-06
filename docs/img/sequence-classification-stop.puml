@@ -1,0 +1,22 @@
+@startuml
+title Sequence Diagram: POST /stop_classification/{classification_id} - Stop Classification
+
+actor User as user
+participant "Web API" as web_api
+participant "BIM Classification Service" as bim_classification
+participant "PostgreSQL" as postgres
+
+user -> web_api: POST /stop_classification/{classification_id}
+web_api -> web_api: Validate classification_id parameter
+
+alt classification_id is missing or invalid
+    web_api --> user: HTTP 400 - Bad Request
+else
+    web_api -> bim_classification: POST /stop_classifications with classification_id
+    bim_classification -> bim_classification: Stop classification process
+    bim_classification -> postgres: Update classification status to "STOPPED"
+    bim_classification --> web_api: 200 OK
+    web_api --> user: 204 No Content
+end
+
+@enduml

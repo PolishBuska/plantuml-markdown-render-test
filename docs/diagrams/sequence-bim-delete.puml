@@ -1,0 +1,39 @@
+@startuml
+skinparam linetype ortho
+skinparam ArrowThickness 1.2
+skinparam ParticipantPadding 34
+skinparam BoxPadding 22
+skinparam ResponseMessageBelowArrow true
+skinparam shadowing false
+skinparam ArrowColor #475569
+skinparam sequence {
+  LifeLineBorderColor #CBD5E1
+  ParticipantBackgroundColor #FFFFFF
+  ParticipantBorderColor #CBD5E1
+}
+
+title Sequence Diagram: DELETE /bim_models/{bim_id} - Delete BIM Model
+
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+participant "Web API" as web_api
+participant "BIM Upload Service" as bim_upload
+participant "ClickHouse" as clickhouse
+participant "PostgreSQL" as postgres
+
+gmini_admin -> web_api: DELETE /bim_models/{bim_id}
+web_api -> web_api: Validate bim_id parameter
+
+alt bim_id is missing or invalid
+web_api --> gmini_admin: HTTP 400 - Bad Request
+else
+    web_api -> bim_upload: DELETE /bim_models with bim_id
+    bim_upload -> clickhouse: Delete BIM data by bim_id
+    clickhouse --> bim_upload: Confirm deletion
+    bim_upload --> web_api: 200 OK
+    web_api -> postgres: Delete BIM metadata by bim_id
+    postgres --> web_api: Confirm deletion
+web_api --> gmini_admin: 204 No Content
+end
+
+@enduml

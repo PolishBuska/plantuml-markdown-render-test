@@ -1,0 +1,27 @@
+@startuml
+left to right direction
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #CBD5E1
+}
+skinparam ArrowColor #475569
+skinparam nodesep 80
+skinparam ranksep 90
+actor "Gmini (User)" as gmini_user
+actor "Gmini (Admin)" as gmini_admin
+
+rectangle "Classification" {
+  usecase "Start Classification" as UC_StartCls
+  usecase "Get Classification Status" as UC_ClsStatus
+  usecase "Stop Classification" as UC_StopCls
+}
+
+' Regular user
+gmini_user -- UC_StartCls
+gmini_user -- UC_ClsStatus
+
+' Admin can monitor and stop processes
+gmini_admin -- UC_ClsStatus
+gmini_admin -- UC_StopCls
+
+@enduml

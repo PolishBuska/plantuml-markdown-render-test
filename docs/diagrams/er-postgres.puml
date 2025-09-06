@@ -1,0 +1,115 @@
+@startuml
+hide circle
+skinparam linetype ortho
+skinparam nodesep 190
+skinparam ranksep 190
+skinparam Padding 18
+skinparam NodePadding 26
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #475569
+skinparam shadowing false
+left to right direction
+
+skinparam entity {
+  BackgroundColor #F8FAFC
+  BorderColor #CBD5E1
+}
+
+package "Core" {
+entity "[P1] PG.BimInfo" as PG_BimInfo {
+    + bim_id: varchar(1024)
+    + name: varchar(1024)
+    + uploaded_ts: timestamptz
+    + description: varchar(1024) (nullable)
+    + percent: bigint (nullable)
+    + status: varchar(30) (nullable)
+  }
+
+  entity "[P2] PG.BimPath" as PG_BimPath {
+    + id: bigint
+    + bim_id: varchar(1024)
+    + nodes: varchar(1024)
+    + properties: varchar(1024)
+    + edges: varchar(1024)
+  }
+}
+
+package "Classification" {
+entity "[P3] PG.ClassificationInfo" as PG_ClassificationInfo {
+    + id: varchar(1024)
+    + status: varchar(1024)
+    + result_path: varchar(1024) (nullable)
+    + progress: bigint
+    + bim_id: varchar(1024)
+    + llm_id: varchar(1024)
+    + message: varchar(1024) (nullable)
+  }
+
+entity "[P4] PG.ClassificationStatus" as PG_ClassificationStatus {
+    + id: bigint
+    + classification_id: varchar(1024)
+    + status: boolean (nullable)
+  }
+
+  entity "[P5] PG.Classificatory" as PG_Classificatory {
+    + id: bigint
+    + item_id: bigint
+    + name: varchar(500)
+    + parent_id: bigint (nullable)
+    + classification_id: varchar(1024)
+  }
+
+entity "[P6] PG.CandidateMatch" as PG_CandidateMatch {
+    + id: bigint
+    + classification_id: varchar(1024) (nullable)
+    + bim_id: varchar(1024)
+    + elem_id: varchar(1024)
+    + folder_id: bigint
+    + cluster_id: varchar(64)
+    + elem_description: text
+    + folder_path: varchar(1024)
+    + distance: float
+    + approved: boolean (nullable)
+    + final: boolean (nullable)
+    + llm_score: float (nullable)
+    + llm_reasoning: text (nullable)
+  }
+}
+
+package "LLM" {
+entity "[P7] PG.LlmInfo" as PG_LlmInfo {
+    + llm_id: varchar(1024)
+    + llm_name: varchar(1024)
+    + llm_description: varchar(1024) (nullable)
+  }
+}
+
+' Hidden edges to declutter layout
+PG_BimInfo -[hidden]-> PG_BimPath
+PG_BimPath -[hidden]-> PG_ClassificationInfo
+PG_ClassificationInfo -[hidden]-> PG_Classificatory
+PG_Classificatory -[hidden]-> PG_CandidateMatch
+PG_CandidateMatch -[hidden]-> PG_LlmInfo
+
+' Logical relationships (no FKs in code, inferred)
+PG_BimPath::bim_id }o--|| PG_BimInfo::bim_id
+PG_ClassificationInfo::bim_id }o--|| PG_BimInfo::bim_id
+PG_ClassificationInfo::llm_id }o--|| PG_LlmInfo::llm_id
+PG_ClassificationStatus::classification_id }o--|| PG_ClassificationInfo::id
+PG_Classificatory::classification_id }o--|| PG_ClassificationInfo::id
+PG_CandidateMatch::bim_id }o--|| PG_BimInfo::bim_id
+PG_CandidateMatch::classification_id }o--|| PG_ClassificationInfo::id
+
+legend left
+Relations join by fields:
+- bim_id
+- classification_id
+- llm_id
+endlegend
+
+legend right
+Indexing:
+- [P#] PostgreSQL entity index used across docs.
+endlegend
+
+@enduml
